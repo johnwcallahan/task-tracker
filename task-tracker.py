@@ -33,29 +33,29 @@ def main():
 		else: 
 			os.mkdir(project_name)
 		
-		units = raw_input('Name of units: ')
+		units = raw_input('Units of measurement: ')
 		
-		def get_total_goal(): 
+		def get_target_goal(): 
 			while True: 
 				try: 
-					total_goal = int(raw_input('Total goal: '))
-					if total_goal < 1: 
+					target_goal = int(raw_input('Target goal: '))
+					if target_goal < 1: 
 						print 'Enter a number greater than 0!'
 						continue
-					return total_goal
+					return target_goal
 					break
 				except ValueError: 
 					print 'Enter a number greater than 0!'
 					continue
 				else: 
-					return total_goal
+					return target_goal
 					break
 
-		total_goal = get_total_goal()
+		target_goal = get_target_goal()
 
 		settings = shelve.open('./' + project_name + '/settings')
 		settings['units'] = units
-		settings['total_goal'] = total_goal
+		settings['target_goal'] = target_goal
 		settings['date_created'] = datetime.datetime.now().strftime('%Y-%m-%d')
 		settings.close()
 
@@ -65,7 +65,7 @@ def main():
 		os.chdir('./' + project_name)
 		settings = shelve.open('settings')
 		units = settings['units']
-		total_goal = settings['total_goal']
+		target_goal = settings['target_goal']
 		data = open('data.txt', 'a')
 
 		def project_prompt():
@@ -131,12 +131,12 @@ def main():
 					sys.exit()
 
 			units_to_date = sum(values)
-			units_left = int(total_goal) - int(units_to_date)
+			units_left = int(target_goal) - int(units_to_date)
 
 			print
 			print "You've completed %d %s" % (units_to_date, units)
 			if units_left < 1: 
-				print "Your goal was %d" % (total_goal)
+				print "Your goal was %d" % (target_goal)
 				print "Congrats, you completed your goal!"
 			else:
 				print "You've got %d %s to go!" % (units_left, units)
