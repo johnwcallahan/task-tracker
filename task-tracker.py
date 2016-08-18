@@ -1,4 +1,7 @@
-import os, sys, shelve, datetime
+import os
+import sys,
+import shelve
+import datetime
 
 def main():
 	def print_logo():
