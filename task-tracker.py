@@ -3,155 +3,155 @@ import sys
 import shelve
 import datetime
 
-def main():
-	def print_logo():
-		print ''
-		print '############################' 
-		print '||      task-tracker      ||' 
-		print '############################'
-		print ''
+def print_logo():
+	print '\n############################' 
+	print '||      task-tracker      ||' 
+	print '############################'
 
-	def prompt():
-		initial_choice = raw_input('What would you like to work on? ')
-		
-		if initial_choice == 'new project':
-			new_project()
-		elif os.path.isdir(initial_choice): 
-			project(initial_choice)
-		else:
-			print ''
-			print "Type the name of an existing project, or type 'new project' to start a new one"
-			prompt()
+def prompt():
+	while True:
+		try:
+			initial_choice = raw_input('\nWhat would you like to work on? ')
+			if initial_choice == 'new' or os.path.isdir(initial_choice):
+				return initial_choice
+			else: 
+				raise ValueError
+		except ValueError: 
+			print "\nType the name of an existing project, or type 'new project' to start a new one"
+		else: 
+			break
 
-	def new_project():
-		project_name = raw_input('Project name: ')
-		if os.path.exists(project_name): 
-			print
-			print '%s already exists! Use another name.' % (project_name)
-			new_project()
-		elif project_name == 'new project':
-			print ''
-			print "You can't use that name! It's reserved for this program"
-			new_project()
+def setup_new_project():
+	# Get project name 
+	while True:
+		try: 
+			project_name = raw_input('\nProject name: ')
+			if project_name == 'new': 
+				raise ValueError
+			elif os.path.exists(project_name): 
+				raise OSError			
+		except ValueError: 
+			print '\nYou can\'t use that name!' 
+		except OSError:
+			print '\n{} already exists! Use another name.'.format(project_name)					
 		else: 
 			os.mkdir(project_name)
-		
-		units = raw_input('Units of measurement: ')
-		
-		def get_target_goal(): 
-			while True: 
-				try: 
-					target_goal = int(raw_input('Target goal: '))
-					if target_goal < 1: 
-						print 'Enter a number greater than 0!'
-						continue
-					return target_goal
-					break
-				except ValueError: 
-					print 'Enter a number greater than 0!'
-					continue
-				else: 
-					return target_goal
-					break
+			break
+	
+	# Get units of measurement
+	units = raw_input('Units of measurement: ')
+	
+	# Get target goal 
+	while True: 
+		try: 
+			target_goal = int(raw_input('Target goal: '))
+			if target_goal < 1: 
+				raise ValueError
+		except ValueError: 
+			print '\nEnter a number greater than 0!'
+		else: 
+			break
 
-		target_goal = get_target_goal()
+	# create settings.db to save units and target goal
+	settings = shelve.open('{}/settings'.format(project_name))
+	settings['units'] = units
+	settings['target_goal'] = target_goal
+	settings.close()
 
-		settings = shelve.open('./' + project_name + '/settings')
-		settings['units'] = units
-		settings['target_goal'] = target_goal
-		settings['date_created'] = datetime.datetime.now().strftime('%Y-%m-%d')
-		settings.close()
+	return project_name
 
-		project(project_name)
+def get_project_data(project_name): 
+	project_data = {}
+	
+	settings = shelve.open('{}/settings'.format(project_name))
+	project_data['units'] = settings['units']
+	project_data['target_goal'] = settings['target_goal']
 
-	def project(project_name): 
-		os.chdir('./' + project_name)
-		settings = shelve.open('settings')
-		units = settings['units']
-		target_goal = settings['target_goal']
-		data = open('data.txt', 'a')
+	if os.path.isfile('{}/data.txt'.format(project_name)):
+		mode = 'r'
+	else: 
+		mode = 'w+'
+	
+	with open('{}/data.txt'.format(project_name), mode) as data: 
+		values = data.readlines()
+	project_data['values'] = values
 
-		def project_prompt():
-			print
-			project_prompt_choice = raw_input('What would you like to do? ')
-			if project_prompt_choice == 'enter data': 
-				enter_data()
-			elif project_prompt_choice == 'show data':
-				show_data()
-			elif project_prompt_choice == 'exit' or project_prompt_choice == 'close':
-				sys.exit()
-			else: 
-				print 
-				print "Uh oh! I didn't catch that"
-				print "You can type 'enter data' to submit data, or type 'show data' to display it" 
-				project_prompt()
-			
-		def enter_data(): 
-			data = open('data.txt', 'a')
-			while True: 
-				try: 
-					data_to_enter = int(raw_input('How many %s did you complete today? ' % units))
-					if data_to_enter < 0: 
-						print ''
-						print 'Enter a number equal to or greater than zero!'
-						continue
-					break
-				except ValueError: 
-					print ''
-					print 'Enter a number equal to or greater than zero!'
-					continue
-			data.write(datetime.datetime.now().strftime('%Y-%m-%d') + ': ' + str(data_to_enter) + '\n')		
-			data.close()
-			display_data_info()
-			project_prompt()
+	return project_data
 
-		def show_data():
-			if os.path.getsize('data.txt') < 1: 
-				print "Looks like nothing's here!"
-				return project_prompt()
-			
-			data = open('data.txt')
-			print ''
-			print data.read()
-			data.close()
-			
-			display_data_info()
-			project_prompt()
+	
+def enter_data(project_name, project_data): 
+	while True: 
+		try: 
+			values_to_enter = int(raw_input('How many {} did you complete today? '.format(project_data['units'])))
+			if values_to_enter < 0:
+				raise ValueError
+		except ValueError: 
+			print '\nEnter a number equal to or greater than zero!'
+		else:
+			with open('{}/data.txt'.format(project_name), 'a') as data:
+				data.write('{}: {}\n'.format(datetime.datetime.now().strftime('%Y-%m-%d'), str(values_to_enter)))
+			break
 
-		def display_data_info(): 
-			data = open('data.txt', 'r')
-			data_list = data.readlines()
-			values = []
-			
-			for d in data_list: 
-				t = d[12:-1]
-				try:
-					t = int(t)
-					values.append(t)
-				except ValueError:
-					print 'Uh oh! It looks like the data.txt file has been altered.'
-					print 'Open it and make sure each line is in this format: 2016-08-01: <number>'
-					sys.exit()
 
-			units_to_date = sum(values)
-			units_left = int(target_goal) - int(units_to_date)
+def show_data(project_data):
+	if len(project_data['values']) == 0:
+		print '\nLooks like nothing\'s here!'
+		return
+	print ''
+	for value in project_data['values']:
+		print value[:-1]
 
-			print
-			print "You've completed %d %s" % (units_to_date, units)
-			if units_left < 1: 
-				print "Your goal was %d" % (target_goal)
-				print "Congrats, you completed your goal!"
-			else:
-				print "You've got %d %s to go!" % (units_left, units)
-			
-		project_prompt()
+def show_data_info(project_data): 
+	values = []
+	for value in project_data['values']: 
+		v = value[12:-1]
+		try:
+			v = int(v)
+			values.append(v)
+		except ValueError:
+			print '\nIt looks like the data.txt file has been altered.'
+			print 'Open it and make sure each line is in this format: 2016-08-01: <integer>'
+			print 'Shutting down'
+			sys.exit()
 
+	units_to_date = sum(values)
+	units_left = int(project_data['target_goal']) - int(units_to_date)
+
+	print '\nYou\'ve completed {} {}'.format(units_to_date, project_data['units'])
+	if units_left < 1: 
+		print 'Your goal was {}'.format(project_data['target_goal'])
+		print 'Congrats, you completed your goal!'
+	else:
+		print 'You\'ve got {} {} to go!'.format(units_left, project_data['units'])
+
+def main():
 	print_logo()
-	prompt()
+	initial_choice = prompt()
+	if initial_choice == 'new': 
+		project_name = setup_new_project()
+	else: 
+		project_name = initial_choice
+	project_data = get_project_data(project_name)
+	
+	while True: 
+		project_prompt_choice = raw_input('\nWhat would you like to do? (enter, show, exit) ').lower()
+		if project_prompt_choice == 'enter': 
+			enter_data(project_name, project_data)
+			project_data = get_project_data(project_name)
+			show_data_info(project_data)
+		elif project_prompt_choice == 'show':
+			show_data(project_data)
+			show_data_info(project_data)
+		elif project_prompt_choice == 'exit':
+			break
+		else: 
+			print '\nI didn\'t catch that!'	
+
+	print '\nGoodbye!'
+	sys.exit()	
 
 try: 
 	main()	
 except KeyboardInterrupt: 
-	print ''
-	print 'Shutting down'
+	print '\nGoodbye!'
 	sys.exit()
