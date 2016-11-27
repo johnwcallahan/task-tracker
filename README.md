@@ -10,7 +10,7 @@ Clone this repository and CD into the correct directory. Make sure you have the 
 
 `python task-tracker.py`
 
-Task-tracker will ask what you'd like to work on; type `new` if this is your first time.
+Task-tracker will ask what you'd like to work on; type `new` if this is your first time, otherwise type the name of an existing project.
 
 Follow the prompts to create a new project. As an example use case, say you have a reading goal you want to keep up with: 
 
